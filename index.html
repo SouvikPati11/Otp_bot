@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>OTP Buyer</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Option 1: Local SDK -->
+    <!-- <script src="telegram-web-app.js"></script> -->
+    <!-- Option 2: CDN SDK (Recommended for updates) -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>OTP Service</h1>
+            <div class="balance">
+                Balance: <span id="userBalance">Loading...</span> KZT <!-- Assuming KZT from 5sim balance -->
+            </div>
+        </header>
+
+        <div class="controls section">
+            <h2>Purchase Number</h2>
+            <div class="form-group">
+                <label for="countrySelect">Country:</label>
+                <select id="countrySelect">
+                    <option value="">Loading countries...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="serviceSelect">Service:</label>
+                <select id="serviceSelect">
+                    <option value="">Select country first</option>
+                </select>
+            </div>
+            <div class="price-check">
+                <p>Price: <span id="servicePrice">-</span> KZT | Stock: <span id="serviceStock">-</span></p>
+            </div>
+            <button id="purchaseButton" class="button" disabled>Purchase Number</button>
+        </div>
+
+        <div class="current-order section" id="currentOrderSection" style="display:none;">
+            <h2>Current Order</h2>
+            <p><strong>Service:</strong> <span id="orderService"></span> (<span id="orderCountry"></span>)</p>
+            <p><strong>Number:</strong> <span id="orderNumber"></span></p>
+            <p><strong>Status:</strong> <span id="orderStatus"></span></p>
+            <p><strong>Time Left for OTP:</strong> <span id="otpTimer">--:--</span></p>
+            <div id="otpDisplay" style="display:none;">
+                <strong>OTP: <span id="otpCode"></span></strong>
+                <p>Full SMS: <span id="otpFullText"></span></p>
+            </div>
+            <button id="cancelOrderButton" class="button danger-button" style="display:none;">Cancel & Refund</button>
+        </div>
+
+        <div class="history section">
+            <h2>Purchase History</h2>
+            <button id="refreshHistoryButton" class="button small-button">Refresh History</button>
+            <ul id="purchaseHistoryList">
+                <li>No history yet.</li>
+            </ul>
+        </div>
+
+        <div id="messages" class="messages"></div>
+
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

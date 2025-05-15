@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.env
+instance/ # Flask instance folder if used for SQLite outside project root
+app.db    # SQLite database file
+migrations/ # Flask-Migrate folder
+
+# Node / JS
+node_modules/
+dist/
+coverage/
+
+# OS generated files
+.DS_Store
+Thumbs.db

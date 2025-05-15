@@ -1,0 +1,168 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 15px;
+    background-color: var(--tg-theme-bg-color, #f4f4f8);
+    color: var(--tg-theme-text-color, #1c1c1e);
+    overscroll-behavior-y: none; /* Prevent pull-to-refresh issues */
+}
+
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--tg-theme-hint-color, #ccc);
+    padding-bottom: 10px;
+}
+
+header h1 {
+    font-size: 1.5em;
+    margin: 0;
+    color: var(--tg-theme-link-color, #007aff);
+}
+
+.balance {
+    font-size: 0.9em;
+    font-weight: bold;
+}
+
+.section {
+    background-color: var(--tg-theme-secondary-bg-color, #fff);
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.section h2 {
+    font-size: 1.2em;
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: var(--tg-theme-link-color, #007aff);
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+select, input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--tg-theme-hint-color, #ccc);
+    border-radius: 5px;
+    box-sizing: border-box;
+    background-color: var(--tg-theme-bg-color, #fff);
+    color: var(--tg-theme-text-color, #000);
+}
+
+.button {
+    display: inline-block;
+    padding: 10px 15px;
+    background-color: var(--tg-theme-button-color, #007aff);
+    color: var(--tg-theme-button-text-color, #fff);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+}
+.button:disabled {
+    background-color: var(--tg-theme-hint-color, #aaa);
+    cursor: not-allowed;
+}
+.button:not(:disabled):hover {
+    opacity: 0.9;
+}
+.small-button {
+    width: auto;
+    padding: 8px 12px;
+    font-size: 0.9em;
+}
+.danger-button {
+    background-color: var(--tg-theme-destructive-text-color, #ff3b30);
+}
+
+
+.price-check {
+    font-size: 0.9em;
+    margin-bottom: 15px;
+    color: var(--tg-theme-hint-color, #666);
+}
+.price-check span {
+    font-weight: bold;
+    color: var(--tg-theme-text-color, #333);
+}
+
+#purchaseHistoryList {
+    list-style: none;
+    padding: 0;
+}
+#purchaseHistoryList li {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--tg-theme-hint-color, #eee);
+    font-size: 0.9em;
+}
+#purchaseHistoryList li:last-child {
+    border-bottom: none;
+}
+.history-item-detail {
+    display: block;
+    font-size: 0.8em;
+    color: var(--tg-theme-hint-color, #777);
+}
+
+.messages {
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    padding: 10px;
+    background-color: var(--tg-theme-button-color, #333);
+    color: var(--tg-theme-button-text-color, #fff);
+    border-radius: 5px;
+    z-index: 1000;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    pointer-events: none;
+}
+.messages.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+.messages.error {
+    background-color: var(--tg-theme-destructive-text-color, #ff3b30);
+}
+.messages.success {
+    background-color: #4CAF50; /* Custom success color as TG doesn't have one */
+}
+
+#currentOrderSection strong {
+    color: var(--tg-theme-text-color, #333);
+}
+#otpCode {
+    font-size: 1.5em;
+    color: var(--tg-theme-link-color, #007aff);
+    font-weight: bold;
+}
+#otpFullText {
+    font-size: 0.85em;
+    color: var(--tg-theme-hint-color);
+    word-break: break-all;
+}
