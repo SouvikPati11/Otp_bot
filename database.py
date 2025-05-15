@@ -1,7 +1,10 @@
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session, sessionmaker
+from models import Base
+import os
 
-class Base(DeclarativeBase):
-  pass
+engine = create_engine(os.getenv('DATABASE_URL', 'sqlite:///otp_buyer.db'))
+db_session = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
 
-db = SQLAlchemy(model_class=Base)
+def init_db():
+    Base.metadata.create_all(bind=engine)
