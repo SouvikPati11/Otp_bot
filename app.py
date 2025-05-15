@@ -1,51 +1,127 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Enum as SQLAlchemyEnum
-from sqlalchemy.orm import relationship
-from datetime import datetime, timezone
-import enum
-from .database import db
+import os
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+from dotenv import load_dotenv
+import requests
+import time
+from datetime import datetime
+from database import init_db, db_session
+from models import User, Order
+from services import FiveSimService
 
-class OrderStatus(enum.Enum):
-    PENDING_PAYMENT = "PENDING_PAYMENT" # Should not happen if we pre-check balance
-    WAITING_OTP = "WAITING_OTP"
-    OTP_RECEIVED = "OTP_RECEIVED"
-    COMPLETED = "COMPLETED" # After OTP is used/confirmed (could be same as OTP_RECEIVED)
-    TIMEOUT_NO_OTP = "TIMEOUT_NO_OTP"
-    CANCELED_BY_USER = "CANCELED_BY_USER"
-    REFUNDED = "REFUNDED"
-    ERROR = "ERROR"
+load_dotenv()
 
-class User(db.Model):
-    __tablename__ = "users"
+app = Flask(__name__)
+CORS(app)
+init_db()
 
-    id = Column(Integer, primary_key=True, index=True) # Our internal ID
-    telegram_id = Column(Integer, unique=True, nullable=False, index=True)
-    username = Column(String, nullable=True)
-    first_name = Column(String, nullable=True)
-    balance = Column(Float, default=0.0, nullable=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+# Initialize 5sim service
+five_sim = FiveSimService(api_key=os.getenv('FIVE_SIM_API_KEY'))
 
-    orders = relationship("Order", back_populates="user")
+@app.route('/api/user/balance', methods=['GET'])
+def get_balance():
+    # In a real app, you'd get user ID from Telegram WebApp data
+    user = User.query.first() or User(balance=0, currency='USD')
+    
+    # Get actual balance from 5sim
+    try:
+        profile = five_sim.get_user_profile()
+        user.balance = profile['balance']
+        user.currency = profile['currency']
+        db_session.commit()
+    except Exception as e:
+        print(f"Error updating balance: {e}")
+    
+    return jsonify({
+        'balance': user.balance,
+        'currency': user.currency
+    })
 
-    def __repr__(self):
-        return f"<User(id={self.id}, telegram_id={self.telegram_id}, balance={self.balance})>"
+@app.route('/api/user/history', methods=['GET'])
+def get_history():
+    # Get user's order history
+    orders = Order.query.order_by(Order.created_at.desc()).limit(10).all()
+    
+    return jsonify([{
+        'date': order.created_at.isoformat(),
+        'service': order.service,
+        'number': order.phone,
+        'status': order.status
+    } for order in orders])
 
-class Order(db.Model):
-    __tablename__ = "orders"
+@app.route('/api/buy', methods=['POST'])
+def buy_number():
+    data = request.json
+    country = data.get('country', 'india')
+    service = data.get('service', 'instagram')
+    
+    try:
+        # Purchase number from 5sim
+        order_data = five_sim.buy_number(country, service)
+        
+        # Save order to database
+        order = Order(
+            order_id=order_data['id'],
+            phone=order_data['phone'],
+            country=country,
+            service=service,
+            price=order_data['price'],
+            status='pending'
+        )
+        db_session.add(order)
+        db_session.commit()
+        
+        return jsonify({
+            'orderId': order_data['id'],
+            'phone': order_data['phone'],
+            'country': country,
+            'service': service,
+            'price': order_data['price']
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
 
-    id = Column(Integer, primary_key=True, index=True) # Our internal ID
-    user_id = Column(Integer, ForeignKey("users.telegram_id"), nullable=False)
-    fivesim_order_id = Column(Integer, unique=True, nullable=True, index=True) # 5sim's order ID
-    service_code = Column(String, nullable=False) # e.g., "instagram", "telegram"
-    country_code = Column(String, nullable=False) # e.g., "india", "russia"
-    phone_number = Column(String, nullable=True)
-    otp_code = Column(String, nullable=True)
-    price = Column(Float, nullable=False)
-    status = Column(SQLAlchemyEnum(OrderStatus), default=OrderStatus.PENDING_PAYMENT, nullable=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-    expires_at = Column(DateTime, nullable=True) # When the 5sim order/number expires
+@app.route('/api/check/<order_id>', methods=['GET'])
+def check_otp(order_id):
+    try:
+        # Check order status with 5sim
+        order_data = five_sim.check_order(order_id)
+        
+        if order_data.get('sms'):
+            # Update order status
+            order = Order.query.filter_by(order_id=order_id).first()
+            if order:
+                order.status = 'success'
+                order.sms = order_data['sms'][0]['code']
+                order.updated_at = datetime.utcnow()
+                db_session.commit()
+            
+            return jsonify({'otp': order_data['sms'][0]['code']})
+        else:
+            return jsonify({'otp': None})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
 
-    user = relationship("User", back_populates="orders")
+@app.route('/api/cancel/<order_id>', methods=['POST'])
+def cancel_order(order_id):
+    try:
+        # Cancel order with 5sim
+        five_sim.cancel_order(order_id)
+        
+        # Update order status
+        order = Order.query.filter_by(order_id=order_id).first()
+        if order:
+            order.status = 'cancelled'
+            order.updated_at = datetime.utcnow()
+            db_session.commit()
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
 
-    def __repr__(self):
-        return f"<Order(id={self.id}, service={self.service_code}, status={self.status})>"
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    db_session.remove()
+
+if __name__ == '__main__':
+    app.run(debug=True)
